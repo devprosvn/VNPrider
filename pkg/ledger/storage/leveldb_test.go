@@ -64,4 +64,8 @@ func TestLevelDBStoreErrors(t *testing.T) {
 	if err := store.ImportSnapshot(badPath); err == nil {
 		t.Fatalf("expected import error")
 	}
+
+	if err := store.ImportSnapshot("missing.json"); err == nil {
+		t.Fatalf("expected read error")
+	}
 }
