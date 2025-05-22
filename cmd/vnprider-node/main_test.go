@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -44,10 +45,32 @@ func TestMainError(t *testing.T) {
 	main()
 }
 
+func TestMainFatal(t *testing.T) {
+	os.Unsetenv("TESTING")
+	called := false
+	logFatal = func(...interface{}) { called = true }
+	runNodeFn = func(context.Context) error { return os.ErrInvalid }
+	main()
+	if !called {
+		t.Fatalf("logFatal not called")
+	}
+	runNodeFn = runNode
+	logFatal = log.Fatal
+}
+
 func TestRunNodeStoreError(t *testing.T) {
+	dir := t.TempDir()
+	oldwd, _ := os.Getwd()
+	defer os.Chdir(oldwd)
+	os.Chdir(dir)
+	os.WriteFile("config.toml", []byte("data_dir=\"d\""), 0o644)
+	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
+	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
+
 	old := newLevelDBStore
 	defer func() { newLevelDBStore = old }()
 	newLevelDBStore = func(string) (*storage.LevelDBStore, error) { return nil, os.ErrNotExist }
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if err := runNode(ctx); err == nil {

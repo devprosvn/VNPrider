@@ -61,6 +61,17 @@ func TestParseFileConfig(t *testing.T) {
 	}
 }
 
+func TestParseFileSkipLines(t *testing.T) {
+	os.WriteFile("skip.toml", []byte("\n#comment\ndata_dir=\"d\""), 0o644)
+	var c Config
+	if err := parseFile("skip.toml", &c); err != nil {
+		t.Fatal(err)
+	}
+	if c.DataDir != "d" {
+		t.Fatalf("expected d got %s", c.DataDir)
+	}
+}
+
 func TestParseFileErrors(t *testing.T) {
 	if err := parseFile("nofile.toml", &Config{}); err == nil {
 		t.Fatalf("expected error for missing file")
