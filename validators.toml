@@ -1,0 +1,11 @@
+[[validator]]
+id = "node1"
+pubkey = "abcd"
+endpoint = "localhost:30303"
+weight = 1
+
+[[validator]]
+id = "node2"
+pubkey = "efgh"
+endpoint = "localhost:30304"
+weight = 1
