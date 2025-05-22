@@ -92,12 +92,55 @@ func parseFile(path string, v any) error {
 		if v, ok := m["data_dir"]; ok {
 			c.DataDir = v
 		}
+		if v, ok := m["p2p.listen_port"]; ok {
+			p, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid p2p.listen_port: %w", err)
+			}
+			c.P2P.ListenPort = p
+		}
+		if v, ok := m["p2p.bootstrap_peers"]; ok {
+			v = strings.TrimPrefix(strings.TrimSuffix(v, "]"), "[")
+			if v != "" {
+				for _, s := range strings.Split(v, ",") {
+					s = strings.Trim(strings.TrimSpace(s), "\"")
+					if s != "" {
+						c.P2P.BootstrapPeers = append(c.P2P.BootstrapPeers, s)
+					}
+				}
+			}
+		}
+		if v, ok := m["rpc.listen_port"]; ok {
+			p, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid rpc.listen_port: %w", err)
+			}
+			c.RPC.ListenPort = p
+		}
 	case *SecurityConfig:
 		if v, ok := m["tls_cert_path"]; ok {
 			c.TLSCert = v
 		}
 		if v, ok := m["tls_key_path"]; ok {
 			c.TLSKey = v
+		}
+		if v, ok := m["rate_limit"]; ok {
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid rate_limit: %w", err)
+			}
+			c.RateLimit = i
+		}
+		if v, ok := m["ip_whitelist"]; ok {
+			v = strings.TrimPrefix(strings.TrimSuffix(v, "]"), "[")
+			if v != "" {
+				for _, s := range strings.Split(v, ",") {
+					s = strings.Trim(strings.TrimSpace(s), "\"")
+					if s != "" {
+						c.IPWhitelist = append(c.IPWhitelist, s)
+					}
+				}
+			}
 		}
 	case *struct {
 		Validators []ValidatorConfig `toml:"validator"`

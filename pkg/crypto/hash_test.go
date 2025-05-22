@@ -1,13 +1,17 @@
-// Developed by DevPros with Codex as supporting tool
-// DO NOT EDIT MANUALLY
 package crypto
 
 import "testing"
 
 func TestComputeSHA3(t *testing.T) {
-	_ = ComputeSHA3([]byte("test"))
+	h := ComputeSHA3([]byte("test"))
+	if len(h) != 32 {
+		t.Fatalf("unexpected hash length")
+	}
 }
 
 func TestComputeRIPEMD160(t *testing.T) {
-	_ = ComputeRIPEMD160([]byte("test"))
+	h := ComputeRIPEMD160([]byte("test"))
+	if len(h) != 20 {
+		t.Fatalf("unexpected hash length")
+	}
 }

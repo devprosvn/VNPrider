@@ -3,6 +3,7 @@
 package consensus
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/devprosvn/VNPrider/pkg/ledger"
@@ -37,7 +38,19 @@ func (e *Engine) EnterNewRound() {
 
 // HandleMessage processes incoming consensus messages.
 func (e *Engine) HandleMessage(msg Msg) {
-	// simple stub: ignore messages
+	switch msg.Type {
+	case MsgProposal:
+		var p ProposalMsg
+		if err := json.Unmarshal(msg.Payload, &p); err != nil {
+			return
+		}
+		if p.Block != nil && p.Block.Header.Height > e.height {
+			e.height = p.Block.Header.Height
+			if e.broadcaster != nil {
+				e.broadcaster(p.Block)
+			}
+		}
+	}
 }
 
 // ProposeBlock creates and broadcasts a new block proposal.

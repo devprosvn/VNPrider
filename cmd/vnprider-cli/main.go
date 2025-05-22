@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+
+	"github.com/devprosvn/VNPrider/pkg/mnemonic"
 )
 
 func main() {
@@ -19,7 +21,17 @@ func main() {
 	case "status":
 		fmt.Println("node running")
 	case "mnemonic":
-		fmt.Println("generate mnemonic not implemented")
+		fmt.Println(mnemonic.GenerateMnemonic())
+	case "validate":
+		if len(flag.Args()) < 2 {
+			fmt.Println("usage: vnprider validate <mnemonic>")
+			return
+		}
+		if mnemonic.ValidateMnemonic(flag.Arg(1)) {
+			fmt.Println("valid")
+		} else {
+			fmt.Println("invalid")
+		}
 	default:
 		fmt.Println("unknown command")
 	}

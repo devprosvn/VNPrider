@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,17 +18,22 @@ import (
 	"github.com/devprosvn/VNPrider/pkg/network"
 )
 
-func main() {
-	log.Println("vnprider-node starting...")
+func runNode(ctx context.Context) error {
 	cfg, err := internal.ParseConfig()
-	internal.CheckErr(err)
+	if err != nil {
+		return err
+	}
 
 	store, err := storage.NewLevelDBStore(cfg.DataDir)
-	internal.CheckErr(err)
+	if err != nil {
+		return err
+	}
 	_ = store
 
 	host, err := network.NewHost(&network.P2PConfig{ListenPort: cfg.P2P.ListenPort, BootstrapPeers: cfg.P2P.BootstrapPeers})
-	internal.CheckErr(err)
+	if err != nil {
+		return err
+	}
 	gossip := network.NewGossip(host)
 
 	engine := consensus.NewEngine([]consensus.Validator{}, func(b *ledger.Block) {
@@ -36,10 +42,18 @@ func main() {
 	})
 
 	apiSrv := api.NewServer()
-	go func() {
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.RPC.ListenPort), apiSrv))
-	}()
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", cfg.RPC.ListenPort), Handler: apiSrv}
+	go srv.ListenAndServe()
 
 	engine.EnterNewRound()
-	select {}
+	<-ctx.Done()
+	return srv.Shutdown(context.Background())
+}
+
+func main() {
+	log.Println("vnprider-node starting...")
+	ctx := context.Background()
+	if err := runNode(ctx); err != nil {
+		log.Fatal(err)
+	}
 }
