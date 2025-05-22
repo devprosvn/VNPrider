@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/devprosvn/VNPrider/internal"
 	"github.com/devprosvn/VNPrider/pkg/api"
@@ -54,6 +55,9 @@ func main() {
 	log.Println("vnprider-node starting...")
 	ctx := context.Background()
 	if err := runNode(ctx); err != nil {
+		if os.Getenv("TESTING") != "" {
+			panic(err)
+		}
 		log.Fatal(err)
 	}
 }

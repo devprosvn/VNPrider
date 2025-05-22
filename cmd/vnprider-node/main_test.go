@@ -33,3 +33,10 @@ func TestRunNodeConfigError(t *testing.T) {
 		t.Fatalf("expected error")
 	}
 }
+
+func TestMainError(t *testing.T) {
+	os.Setenv("TESTING", "1")
+	defer os.Unsetenv("TESTING")
+	defer func() { recover() }()
+	main()
+}

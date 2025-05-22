@@ -60,3 +60,55 @@ func TestParseFileConfig(t *testing.T) {
 		t.Fatalf("config parse failed")
 	}
 }
+
+func TestParseFileErrors(t *testing.T) {
+	if err := parseFile("nofile.toml", &Config{}); err == nil {
+		t.Fatalf("expected error for missing file")
+	}
+
+	os.WriteFile("badport.toml", []byte("p2p.listen_port=abc"), 0o644)
+	if err := parseFile("badport.toml", &Config{}); err == nil {
+		t.Fatalf("expected port error")
+	}
+
+	os.WriteFile("valmissing.toml", []byte("validator[0].id=\"id1\""), 0o644)
+	tmp := struct {
+		Validators []ValidatorConfig `toml:"validator"`
+	}{}
+	if err := parseFile("valmissing.toml", &tmp); err == nil {
+		t.Fatalf("expected validator field error")
+	}
+
+	os.WriteFile("rpcbad.toml", []byte("rpc.listen_port=bad"), 0o644)
+	if err := parseFile("rpcbad.toml", &Config{}); err == nil {
+		t.Fatalf("expected rpc port error")
+	}
+
+	os.WriteFile("ratebad.toml", []byte("rate_limit=bad"), 0o644)
+	if err := parseFile("ratebad.toml", &SecurityConfig{}); err == nil {
+		t.Fatalf("expected rate limit error")
+	}
+
+	os.WriteFile("valindexbad.toml", []byte("validator[abc].id=\"x\""), 0o644)
+	if err := parseFile("valindexbad.toml", &tmp); err == nil {
+		t.Fatalf("expected validator index error")
+	}
+
+	os.WriteFile("valkeybad.toml", []byte("validator[0.id=\"x\""), 0o644)
+	if err := parseFile("valkeybad.toml", &tmp); err == nil {
+		t.Fatalf("expected validator key error")
+	}
+}
+
+func TestParseValidators(t *testing.T) {
+	os.WriteFile("vals.toml", []byte("validator[0].id=\"id1\"\nvalidator[0].pubkey=\"pk1\"\nvalidator[0].endpoint=\"ep1\"\nvalidator[0].weight=2"), 0o644)
+	tmp := struct {
+		Validators []ValidatorConfig `toml:"validator"`
+	}{}
+	if err := parseFile("vals.toml", &tmp); err != nil {
+		t.Fatal(err)
+	}
+	if len(tmp.Validators) != 1 || tmp.Validators[0].Weight != 2 {
+		t.Fatalf("validator not parsed")
+	}
+}

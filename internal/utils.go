@@ -2,11 +2,11 @@
 // DO NOT EDIT MANUALLY
 package internal
 
-import "log"
+// Package internal provides utility helpers for the command packages.
 
-// CheckErr terminates the program if err is not nil.
+// CheckErr panics if err is not nil.
 func CheckErr(err error) {
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }

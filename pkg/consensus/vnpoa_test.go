@@ -48,3 +48,12 @@ func TestEngineEnterNewRound(t *testing.T) {
 		t.Fatalf("no block proposed")
 	}
 }
+
+func TestEngineHandleMessageInvalid(t *testing.T) {
+	e := NewEngine(nil, nil)
+	e.HandleMessage(Msg{Type: MsgProposal, Payload: []byte("{")})
+	if e.height != 0 {
+		t.Fatalf("height should not change on invalid msg")
+	}
+	e.HandleMessage(Msg{Type: MsgPrevote, Payload: nil})
+}

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -41,5 +42,26 @@ func TestLevelDBStore(t *testing.T) {
 
 	if _, err := store2.GetBlock(2); err == nil {
 		t.Fatalf("expected missing block error")
+	}
+}
+
+func TestLevelDBStoreErrors(t *testing.T) {
+	store, err := NewLevelDBStore("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.GetBlock(99); err == nil {
+		t.Fatalf("expected error for missing block")
+	}
+	if _, err := store.GetState("missing"); err == nil {
+		t.Fatalf("expected error for missing state")
+	}
+	badPath := filepath.Join("non", "exist", "snap.json")
+	if err := store.ExportSnapshot(badPath); err == nil {
+		t.Fatalf("expected export error")
+	}
+	os.WriteFile(badPath, []byte("bad"), 0o644)
+	if err := store.ImportSnapshot(badPath); err == nil {
+		t.Fatalf("expected import error")
 	}
 }
