@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -94,5 +99,52 @@ func TestRunNodeHostError(t *testing.T) {
 	cancel()
 	if err := runNode(ctx); err == nil {
 		t.Fatalf("expected host error")
+	}
+}
+
+func TestRunNodeRPCPortInUse(t *testing.T) {
+	dir := t.TempDir()
+	old, _ := os.Getwd()
+	defer os.Chdir(old)
+	os.Chdir(dir)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+
+	os.WriteFile("config.toml", []byte(fmt.Sprintf("data_dir=\"d\"\np2p.listen_port=0\nrpc.listen_port=%d", port)), 0o644)
+	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id1\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
+	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+	err = runNode(ctx)
+	ln.Close()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRunNodeP2PInitFail(t *testing.T) {
+	dir := t.TempDir()
+	old, _ := os.Getwd()
+	defer os.Chdir(old)
+	os.Chdir(dir)
+	os.WriteFile("config.toml", []byte("data_dir=\"d\""), 0o644)
+	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id1\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
+	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
+
+	oldHost := newHost
+	defer func() { newHost = oldHost }()
+	newHost = func(*network.P2PConfig) (*network.Host, error) { return nil, fmt.Errorf("p2p init fail") }
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := runNode(ctx); err == nil || !strings.Contains(err.Error(), "p2p init fail") {
+		t.Fatalf("expected p2p init fail error")
 	}
 }
