@@ -1,0 +1,16 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+/vnprider-node
+/vnprider-cli
+
+# Build directories
+/build/
+/bin/
+
+# IDE
+*.idea
+*.vscode
