@@ -1,0 +1,10 @@
+# VNPrider configuration
+
+data_dir = "./data"
+
+[p2p]
+listen_port = 30303
+bootstrap_peers = []
+
+[rpc]
+listen_port = 8080

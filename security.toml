@@ -1,0 +1,4 @@
+tls_cert_path = "server.crt"
+tls_key_path = "server.key"
+rate_limit = 100
+ip_whitelist = ["127.0.0.1"]
