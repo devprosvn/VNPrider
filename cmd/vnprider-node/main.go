@@ -21,6 +21,8 @@ import (
 
 var newLevelDBStore = storage.NewLevelDBStore
 var newHost = network.NewHost
+var runNodeFn = runNode
+var logFatal = log.Fatal
 
 func runNode(ctx context.Context) error {
 	cfg, err := internal.ParseConfig()
@@ -57,10 +59,10 @@ func runNode(ctx context.Context) error {
 func main() {
 	log.Println("vnprider-node starting...")
 	ctx := context.Background()
-	if err := runNode(ctx); err != nil {
+	if err := runNodeFn(ctx); err != nil {
 		if os.Getenv("TESTING") != "" {
 			panic(err)
 		}
-		log.Fatal(err)
+		logFatal(err)
 	}
 }
