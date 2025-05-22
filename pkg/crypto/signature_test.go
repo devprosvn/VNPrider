@@ -1,12 +1,18 @@
-// Developed by DevPros with Codex as supporting tool
-// DO NOT EDIT MANUALLY
 package crypto
 
 import "testing"
 
 func TestSignVerify(t *testing.T) {
-	priv, pub, _ := GenerateKeypair()
+	priv, pub, err := GenerateKeypair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	msg := []byte("hello")
-	sig, _ := Sign(priv, msg)
-	Verify(pub, msg, sig)
+	sig, err := Sign(priv, msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !Verify(pub, msg, sig) {
+		t.Fatalf("verify failed")
+	}
 }

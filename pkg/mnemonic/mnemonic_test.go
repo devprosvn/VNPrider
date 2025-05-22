@@ -1,5 +1,3 @@
-// Developed by DevPros with Codex as supporting tool
-// DO NOT EDIT MANUALLY
 package mnemonic
 
 import "testing"
@@ -7,7 +5,16 @@ import "testing"
 func TestMnemonicRoundtrip(t *testing.T) {
 	m := GenerateMnemonic()
 	if !ValidateMnemonic(m) {
-		t.Fail()
+		t.Fatalf("generated mnemonic invalid")
 	}
-	_ = MnemonicToSeed(m)
+	seed := MnemonicToSeed(m)
+	if len(seed) != 32 {
+		t.Fatalf("seed size incorrect")
+	}
+}
+
+func TestValidateMnemonic(t *testing.T) {
+	if ValidateMnemonic("bad-word") {
+		t.Fatalf("expected invalid")
+	}
 }

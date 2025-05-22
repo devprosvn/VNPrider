@@ -64,7 +64,11 @@ func (l *LevelDBStore) GetState(key string) ([]byte, error) {
 func (l *LevelDBStore) ExportSnapshot(path string) error {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	data, err := json.Marshal(l)
+	snap := struct {
+		Blocks map[uint64]*ledger.Block
+		State  map[string][]byte
+	}{l.blocks, l.state}
+	data, err := json.Marshal(snap)
 	if err != nil {
 		return err
 	}
@@ -79,11 +83,14 @@ func (l *LevelDBStore) ImportSnapshot(path string) error {
 	if err != nil {
 		return err
 	}
-	tmp := LevelDBStore{}
-	if err := json.Unmarshal(data, &tmp); err != nil {
+	snap := struct {
+		Blocks map[uint64]*ledger.Block
+		State  map[string][]byte
+	}{}
+	if err := json.Unmarshal(data, &snap); err != nil {
 		return err
 	}
-	l.blocks = tmp.blocks
-	l.state = tmp.state
+	l.blocks = snap.Blocks
+	l.state = snap.State
 	return nil
 }
