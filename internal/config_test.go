@@ -112,3 +112,27 @@ func TestParseValidators(t *testing.T) {
 		t.Fatalf("validator not parsed")
 	}
 }
+
+func TestParseConfigErrors(t *testing.T) {
+	dir := t.TempDir()
+	old, _ := os.Getwd()
+	defer os.Chdir(old)
+	os.Chdir(dir)
+
+	// missing config.toml
+	if _, err := ParseConfig(); err == nil {
+		t.Fatalf("expected error for missing config")
+	}
+
+	// config exists but validators missing
+	os.WriteFile("config.toml", []byte("data_dir=\"d\""), 0o644)
+	if _, err := ParseConfig(); err == nil {
+		t.Fatalf("expected validator error")
+	}
+
+	// validators exist but security missing
+	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id1\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
+	if _, err := ParseConfig(); err == nil {
+		t.Fatalf("expected security error")
+	}
+}

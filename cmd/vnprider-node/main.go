@@ -19,19 +19,22 @@ import (
 	"github.com/devprosvn/VNPrider/pkg/network"
 )
 
+var newLevelDBStore = storage.NewLevelDBStore
+var newHost = network.NewHost
+
 func runNode(ctx context.Context) error {
 	cfg, err := internal.ParseConfig()
 	if err != nil {
 		return err
 	}
 
-	store, err := storage.NewLevelDBStore(cfg.DataDir)
+	store, err := newLevelDBStore(cfg.DataDir)
 	if err != nil {
 		return err
 	}
 	_ = store
 
-	host, err := network.NewHost(&network.P2PConfig{ListenPort: cfg.P2P.ListenPort, BootstrapPeers: cfg.P2P.BootstrapPeers})
+	host, err := newHost(&network.P2PConfig{ListenPort: cfg.P2P.ListenPort, BootstrapPeers: cfg.P2P.BootstrapPeers})
 	if err != nil {
 		return err
 	}
