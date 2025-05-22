@@ -65,3 +65,10 @@ func TestCLIValidateInvalid(t *testing.T) {
 		t.Fatalf("expected invalid got %q", out)
 	}
 }
+
+func TestCLIUsage(t *testing.T) {
+	out := runCLI()
+	if !strings.HasPrefix(out, "usage:") {
+		t.Fatalf("expected usage output, got %q", out)
+	}
+}
