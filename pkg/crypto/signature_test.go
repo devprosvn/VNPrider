@@ -1,6 +1,9 @@
 package crypto
 
-import "testing"
+import (
+	"crypto/rand"
+	"testing"
+)
 
 func TestSignVerify(t *testing.T) {
 	priv, pub, err := GenerateKeypair()
@@ -14,5 +17,14 @@ func TestSignVerify(t *testing.T) {
 	}
 	if !Verify(pub, msg, sig) {
 		t.Fatalf("verify failed")
+	}
+}
+
+func TestGenerateKeypairError(t *testing.T) {
+	oldReader := rand.Reader
+	rand.Reader = errReader{}
+	defer func() { rand.Reader = oldReader }()
+	if _, _, err := GenerateKeypair(); err == nil {
+		t.Fatalf("expected error")
 	}
 }

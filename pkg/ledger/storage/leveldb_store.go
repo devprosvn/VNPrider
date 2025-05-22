@@ -11,6 +11,13 @@ import (
 	"github.com/devprosvn/VNPrider/pkg/ledger"
 )
 
+var (
+	jsonMarshal   = json.Marshal
+	jsonUnmarshal = json.Unmarshal
+	writeFile     = os.WriteFile
+	readFile      = os.ReadFile
+)
+
 // LevelDBStore implements BlockStore and StateStore
 
 type LevelDBStore struct {
@@ -68,18 +75,18 @@ func (l *LevelDBStore) ExportSnapshot(path string) error {
 		Blocks map[uint64]*ledger.Block
 		State  map[string][]byte
 	}{l.blocks, l.state}
-	data, err := json.Marshal(snap)
+	data, err := jsonMarshal(snap)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o644)
+	return writeFile(path, data, 0o644)
 }
 
 // ImportSnapshot imports database snapshot
 func (l *LevelDBStore) ImportSnapshot(path string) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	data, err := os.ReadFile(path)
+	data, err := readFile(path)
 	if err != nil {
 		return err
 	}
@@ -87,7 +94,7 @@ func (l *LevelDBStore) ImportSnapshot(path string) error {
 		Blocks map[uint64]*ledger.Block
 		State  map[string][]byte
 	}{}
-	if err := json.Unmarshal(data, &snap); err != nil {
+	if err := jsonUnmarshal(data, &snap); err != nil {
 		return err
 	}
 	l.blocks = snap.Blocks

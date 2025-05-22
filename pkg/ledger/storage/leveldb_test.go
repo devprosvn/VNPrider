@@ -68,4 +68,20 @@ func TestLevelDBStoreErrors(t *testing.T) {
 	if err := store.ImportSnapshot("missing.json"); err == nil {
 		t.Fatalf("expected read error")
 	}
+
+	oldMarshal := jsonMarshal
+	jsonMarshal = func(any) ([]byte, error) { return nil, os.ErrInvalid }
+	defer func() { jsonMarshal = oldMarshal }()
+	if err := store.ExportSnapshot(filepath.Join(t.TempDir(), "snap")); err == nil {
+		t.Fatalf("expected marshal error")
+	}
+
+	oldUnmarshal := jsonUnmarshal
+	jsonUnmarshal = func([]byte, any) error { return os.ErrInvalid }
+	defer func() { jsonUnmarshal = oldUnmarshal }()
+	path := filepath.Join(t.TempDir(), "snap2")
+	os.WriteFile(path, []byte("{}"), 0o644)
+	if err := store.ImportSnapshot(path); err == nil {
+		t.Fatalf("expected unmarshal error")
+	}
 }
