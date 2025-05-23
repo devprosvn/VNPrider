@@ -14,6 +14,7 @@ import (
 
 	"github.com/devprosvn/VNPrider/pkg/ledger/storage"
 	"github.com/devprosvn/VNPrider/pkg/network"
+	"github.com/devprosvn/VNPrider/pkg/node"
 )
 
 func TestRunNode(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRunNode(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		cancel()
 	}()
-	if err := runNode(ctx); err != nil {
+	if err := node.Run(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -38,7 +39,7 @@ func TestRunNode(t *testing.T) {
 func TestRunNodeConfigError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := runNode(ctx); err == nil {
+	if err := node.Run(ctx); err == nil {
 		t.Fatalf("expected error")
 	}
 }
@@ -59,7 +60,7 @@ func TestMainFatal(t *testing.T) {
 	if !called {
 		t.Fatalf("logFatal not called")
 	}
-	runNodeFn = runNode
+	runNodeFn = node.Run
 	logFatal = log.Fatal
 }
 
@@ -72,13 +73,13 @@ func TestRunNodeStoreError(t *testing.T) {
 	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
 	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
 
-	old := newLevelDBStore
-	defer func() { newLevelDBStore = old }()
-	newLevelDBStore = func(string) (*storage.LevelDBStore, error) { return nil, os.ErrNotExist }
+	old := node.NewLevelDBStore
+	defer func() { node.NewLevelDBStore = old }()
+	node.NewLevelDBStore = func(string) (*storage.LevelDBStore, error) { return nil, os.ErrNotExist }
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := runNode(ctx); err == nil {
+	if err := node.Run(ctx); err == nil {
 		t.Fatalf("expected store error")
 	}
 }
@@ -92,12 +93,12 @@ func TestRunNodeHostError(t *testing.T) {
 	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id1\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
 	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
 
-	oldHost := newHost
-	defer func() { newHost = oldHost }()
-	newHost = func(*network.P2PConfig) (*network.Host, error) { return nil, os.ErrPermission }
+	oldHost := node.NewHost
+	defer func() { node.NewHost = oldHost }()
+	node.NewHost = func(*network.P2PConfig) (*network.Host, error) { return nil, os.ErrPermission }
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := runNode(ctx); err == nil {
+	if err := node.Run(ctx); err == nil {
 		t.Fatalf("expected host error")
 	}
 }
@@ -123,7 +124,7 @@ func TestRunNodeRPCPortInUse(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		cancel()
 	}()
-	err = runNode(ctx)
+	err = node.Run(ctx)
 	ln.Close()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		t.Fatalf("unexpected error: %v", err)
@@ -139,12 +140,12 @@ func TestRunNodeP2PInitFail(t *testing.T) {
 	os.WriteFile("validators.toml", []byte("[validator]\nid=\"id1\"\npubkey=\"pk\"\nendpoint=\"ep\"\nweight=1"), 0o644)
 	os.WriteFile("security.toml", []byte("tls_cert_path=\"c\"\ntls_key_path=\"k\""), 0o644)
 
-	oldHost := newHost
-	defer func() { newHost = oldHost }()
-	newHost = func(*network.P2PConfig) (*network.Host, error) { return nil, fmt.Errorf("p2p init fail") }
+	oldHost := node.NewHost
+	defer func() { node.NewHost = oldHost }()
+	node.NewHost = func(*network.P2PConfig) (*network.Host, error) { return nil, fmt.Errorf("p2p init fail") }
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := runNode(ctx); err == nil || !strings.Contains(err.Error(), "p2p init fail") {
+	if err := node.Run(ctx); err == nil || !strings.Contains(err.Error(), "p2p init fail") {
 		t.Fatalf("expected p2p init fail error")
 	}
 }
